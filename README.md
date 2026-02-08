@@ -10,9 +10,11 @@ git clone <YOUR_GIT_URL>
 # Step 2: Navigate to the project directory.
 cd <YOUR_PROJECT_NAME>
 
-# Step 3:php artisan key:generate
+# Step 3:
+php artisan key:generate
 
-# Step 4:php -S 127.0.0.1:8080 -t public
+# Step 4:
+php -S 127.0.0.1:8080 -t public
 
 php artisan migrate
 
