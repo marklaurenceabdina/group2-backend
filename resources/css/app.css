@@ -5,7 +5,88 @@
 @source '../**/*.blade.php';
 @source '../**/*.js';
 
+
 @theme {
+    --font-heading: "Libre Baskerville", serif;
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
+
+    --color-primary:        #0EA5E9;  /* Sky Blue */
+    --color-secondary:      #0284C7;  /* Deep Blue */
+    --color-accent:         #38BDF8;  /* Aqua */
+    --color-surface:        #E0F7FF;  /* Light Water */
+    --color-primary-text:   #0C4A6E;  /* Dark Ocean */
+    --color-secondary-text: #334155;
+}
+
+
+html,
+body {
+    @apply bg-white;
+
+    @media (prefers-color-scheme: white) {
+        color-scheme: white;
+    }
+
+    font-family: var(--font-sans);
+}
+
+/* Smooth scrolling */
+html {
+    scroll-behavior: smooth;
+}
+
+/* Prevent navbar overlap */
+section {
+    scroll-margin-top: 100px;
+}
+
+/* HOVER */
+.link {
+    color: var(--color-primary-text);
+    transition: color 0.2s;
+}
+
+.link:hover {
+    color: var(--color-accent);
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 6px;
+}
+
+
+.btn {
+    color: #fff;
+    background-color: var(--color-secondary);
+    border-radius: 0.75rem;
+    font-weight: bold;
+    transition: background-color 0.2s;
+}
+
+.btn:hover {
+    background-color: var(--color-accent);
+}
+
+.btn2 {
+    color: var(--color-primary);
+    border-radius: 0.75rem;
+    border: 2px solid var(--color-primary);
+    font-weight: bold;
+    transition: background-color 0.2s;
+}
+
+.btn2:hover {
+    background-color: var(--color-primary);
+    color: #fff;
+}
+
+
+/* NON-HOVER */
+h1, h2 {
+    font-family: var(--font-heading);
+    font-weight: bold;
+}
+
+h1 {
+    font-size: 85px;
 }
