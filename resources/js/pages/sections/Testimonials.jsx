@@ -7,12 +7,12 @@ export default function Testimonials() {
 
             <div className="max-w-3xl mx-auto bg-white/90 backdrop-blur-md p-12 rounded-3xl shadow-2xl text-center">
                 <p className="text-xl text-gray-700 mb-6 italic leading-relaxed">
-                    “Our family vacation was unforgettable! Clean facilities,
+                    “Wow, perfect so much! Our family vacation was unforgettable hehehe. Clean facilities,
                     friendly staff, and amazing views.”
                 </p>
 
                 <span className="font-semibold text-sky-600">
-                    – Maria D.
+                    – Linda Walker
                 </span>
             </div>
         </section>

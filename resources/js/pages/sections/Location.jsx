@@ -11,8 +11,8 @@ export default function Location() {
 
                         <p className="text-lg text-gray-600 mb-6">
                             <span className="font-semibold">📍 Address:</span><br />
-                            Brgy. San Vicente, Sta. Elena<br />
-                            Camarines Norte, Philippines 4612
+                            Brgy. Osias, Kabacan<br />
+                            North Cotabato, Philippines 9407
                         </p>
 
                         <p className="text-lg text-gray-600 mb-6">
@@ -22,13 +22,21 @@ export default function Location() {
                         </p>
 
                         <p className="text-lg text-gray-600">
-                            <span className="font-semibold">🚗 From Manila:</span><br />
-                            4-hour drive via North Luzon Expressway
+                            <span className="font-semibold">🚗 From 7/11 Shell:</span><br />
+                            2-minutes drive via Bonifacio - Osias Road
                         </p>
                     </div>
 
-                    <div className="h-96 rounded-2xl shadow-2xl bg-linear-to-br from-sky-200 to-sky-400 flex items-center justify-center text-white text-lg font-semibold">
-                        Google Maps Location
+                    <div className="h-96 rounded-2xl shadow-2xl overflow-hidden">
+                        <iframe
+                            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d1979.6026808351057!2d124.8339952453707!3d7.102182060453228!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x32f88d113a5cc367%3A0x51ce6a7ec700470!2sWaterland%20Resort!5e0!3m2!1sen!2sph!4v1771947746813!5m2!1sen!2sph"
+                            title="Waterland Resort location"
+                            className="w-full h-full"
+                            style={{ border: 0 }}
+                            allowFullScreen=""
+                            loading="lazy"
+                            referrerPolicy="no-referrer-when-downgrade"
+                        />
                     </div>
 
                 </div>

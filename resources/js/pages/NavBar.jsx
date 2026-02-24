@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import photo from "../../images/temp-logo.png";
+import photo from "../../images/WaterLand logo.png";
 
 export default function NavBar() {
     const [menuOpen, setMenuOpen] = useState(false);

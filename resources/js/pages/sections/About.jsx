@@ -1,3 +1,8 @@
+import aerialImg from '../../../images/waterland-sample.png'; //temporary image, replace with actual aerial view of the resort when available
+import lobbyImg  from '../../../images/waterlandroom.png'; // temporary image, replace with actual lobby image of the resort when available
+// if you use the logo elsewhere in this component you can import it too:
+// import logo from '../../images/logo.png';
+
 export default function About() {
     return (
         <main className="bg-white text-gray-800" id="about">
@@ -11,8 +16,8 @@ export default function About() {
                         About Waterland Resort
                     </h1>
                     <p className="text-lg md:text-xl max-w-3xl mx-auto text-sky-100">
-                        Discover the story behind paradise – where luxury meets nature,
-                        and every moment becomes a memory.
+                        Discover the story behind paradise - where nature's beauty meets 
+                        comfort, and every moment turns into a memory worth keeping.
                     </p>
                 </div>
             </section>
@@ -27,32 +32,31 @@ export default function About() {
                             </h2>
 
                             <p className="text-lg text-gray-600 mb-6 leading-relaxed">
-                                Founded in 2015, Waterland Resort began with a simple vision:
-                                to create a sanctuary where families, couples, and friends could
-                                escape the ordinary and immerse themselves in tropical luxury.
+                                Founded in 2005, Waterland Resort started with a simple dream: 
+                                to create a place where families, couples, and friends from Kabacan 
+                                and beyond could escape the everyday and enjoy the beauty of tropical life.
                             </p>
 
                             <p className="text-lg text-gray-600 mb-6 leading-relaxed">
-                                What started as a small beachfront property has grown into a
-                                5-hectare paradise featuring world-class amenities, private
-                                cottages, and award-winning service.
+                                What began as a small property by the water has grown into a 5-hectare haven, 
+                                complete with cozy cottages, refreshing pools, and amenities designed for comfort and fun.
                             </p>
 
                             <p className="text-lg text-gray-600 leading-relaxed">
-                                Today, we welcome thousands of guests each year – from intimate
-                                weddings to grand corporate events – all while maintaining the
-                                warm, personal touch that makes Waterland truly special.
+                                Today, we welcome thousands of guests each year—from intimate local celebrations 
+                                to lively corporate events—all while keeping the warm, personal touch that makes 
+                                Waterland Resort truly feel like home.
                             </p>
                         </div>
 
                         <div className="grid grid-cols-2 gap-6">
                             <img
-                                src="https://images.unsplash.com/photo-1582719478250-c89cae4dc85b"
+                                src={aerialImg}
                                 alt="Resort aerial view"
                                 className="rounded-2xl shadow-2xl h-72 w-full object-cover hover:scale-105 transition duration-500"
                             />
                             <img
-                                src="https://images.unsplash.com/photo-1571896349842-33c89424de2d"
+                                src={lobbyImg}
                                 alt="Resort lobby"
                                 className="rounded-2xl shadow-2xl h-72 w-full object-cover mt-10 hover:scale-105 transition duration-500"
                             />

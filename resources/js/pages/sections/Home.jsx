@@ -14,7 +14,7 @@ export default function Home() {
                 className="relative h-screen flex items-center justify-center text-center bg-cover bg-center"
                 style={{
                     backgroundImage:
-                        "url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e')",
+                        "url('https://images.unsplash.com/photo-1676089775678-f81f7253103e?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D')",
                 }}
                 id="home"
             >
@@ -22,12 +22,12 @@ export default function Home() {
 
                 <div className="relative z-10 text-white px-6 max-w-4xl">
                     <h1 className="text-6xl md:text-7xl font-bold mb-8 leading-tight drop-shadow-lg">
-                        Escape to Paradise at Waterland Resort
+                        Escape to Paradise at Waterland Resort Kabacan
                     </h1>
 
                     <p className="text-lg md:text-xl mb-10 max-w-2xl mx-auto text-sky-100">
-                        Relax. Swim. Celebrate. Experience unforgettable
-                        moments surrounded by crystal-clear waters and tropical beauty.
+                        Relax in peaceful surroundings, swim in refreshing waters, 
+                        and celebrate life's special moments in beautiful North Cotabato.
                     </p>
 
                     <div className="flex justify-center gap-6">
