@@ -21,6 +21,18 @@ export default function Location() {
                             hello@waterlandresort.com
                         </p>
 
+                        <p className="text-lg text-gray-600 mb-6">
+                            <span className="font-semibold">📘 Facebook:</span><br />
+                            <a
+                                href="https://www.facebook.com/profile.php?id=100063975132336&mibextid=ZbWKwL"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-sky-600 hover:underline"
+                            >
+                                @Waterland Resort
+                            </a>
+                        </p>
+
                         <p className="text-lg text-gray-600">
                             <span className="font-semibold">🚗 From 7/11 Shell:</span><br />
                             2-minutes drive via Bonifacio - Osias Road

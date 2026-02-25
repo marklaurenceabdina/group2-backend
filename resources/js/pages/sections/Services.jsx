@@ -1,4 +1,27 @@
+import deluxeImg from "../../../images/waterlandroom.png"
+import familyImg from "../../../images/waterland-hostel.jpg"
+import cottageImg from "../../../images/cottage.jpg"
+
 export default function Services() {
+
+    const rooms = [
+        {
+            name: "Deluxe Room",
+            price: "₱3,500 / night",
+            image: deluxeImg,
+        },
+        {
+            name: "Family Room",
+            price: "₱5,000 / night",
+            image: familyImg,
+        },
+        {
+            name: "Private Cottage",
+            price: "₱7,500 / night",
+            image: cottageImg,
+        },
+    ]
+
     return (
         <section className="py-28 px-6 md:px-24 text-center bg-white" id="services">
             <h2 className="text-4xl font-bold mb-16 text-sky-800">
@@ -6,16 +29,19 @@ export default function Services() {
             </h2>
 
             <div className="grid md:grid-cols-3 gap-10">
-                {[
-                    { name: "Deluxe Room", price: "₱3,500 / night" },
-                    { name: "Family Room", price: "₱5,000 / night" },
-                    { name: "Private Cottage", price: "₱7,500 / night" },
-                ].map((room, index) => (
+                {rooms.map((room, index) => (
                     <div
                         key={index}
                         className="bg-white rounded-2xl shadow-lg hover:shadow-2xl hover:-translate-y-2 transition duration-300 overflow-hidden"
                     >
-                        <div className="h-56 bg-linear-to-br from-sky-200 to-sky-400"></div>
+                        {/* IMAGE SECTION */}
+                        <div className="h-56 overflow-hidden">
+                            <img
+                                src={room.image}
+                                alt={room.name}
+                                className="w-full h-full object-cover"
+                            />
+                        </div>
 
                         <div className="p-8">
                             <h3 className="text-xl font-semibold mb-3">
