@@ -20,7 +20,7 @@ export default function NavBar() {
 
                 {/* DESKTOP LINKS */}
                 <div className="hidden md:flex gap-8 items-center absolute left-1/2 transform -translate-x-1/2 text-primary-text font-medium">
-                    {["home", "about", "services", "location", "testimonials", "contact", "footer"].map((item) => (
+                    {["home", "about", "services", "location", "testimonials", "contact"].map((item) => (
                         <a
                             key={item}
                             href={`#${item}`}
@@ -65,7 +65,7 @@ export default function NavBar() {
                 <div className="md:hidden backdrop-blur-lg bg-surface shadow-xl py-8 px-6 flex flex-col gap-6 text-primary-text">
 
                     <div className="flex flex-col items-center gap-6 font-medium">
-                        {["home", "about", "services", "location", "testimonials", "contact", "footer"].map((item) => (
+                        {["home", "about", "services", "location", "testimonials", "contact"].map((item) => (
                             <a
                                 key={item}
                                 href={`#${item}`}
