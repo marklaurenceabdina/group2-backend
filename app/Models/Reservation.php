@@ -49,6 +49,10 @@ class Reservation extends Model
      */
     public function calculateNights(): int
     {
+        if (empty($this->check_in_date) || empty($this->check_out_date)) {
+            return 0;
+        }
+
         $checkIn = Carbon::parse($this->check_in_date);
         $checkOut = Carbon::parse($this->check_out_date);
 
@@ -61,6 +65,10 @@ class Reservation extends Model
     public function calculateTotalPrice(): float
     {
         $nights = $this->calculateNights();
+        if (!$this->accommodation || !isset($this->accommodation->price_per_night)) {
+            return 0.0;
+        }
+
         return $nights * $this->accommodation->price_per_night;
     }
 
@@ -72,7 +80,10 @@ class Reservation extends Model
         parent::boot();
 
         static::creating(function ($reservation) {
-            $reservation->number_of_nights = $reservation->calculateNights();
+            if (!empty($reservation->check_in_date) && !empty($reservation->check_out_date)) {
+                $reservation->number_of_nights = $reservation->calculateNights();
+            }
+
             $reservation->total_price = $reservation->calculateTotalPrice();
             if (empty($reservation->status)) {
                 $reservation->status = 'pending';
@@ -80,7 +91,9 @@ class Reservation extends Model
         });
 
         static::updating(function ($reservation) {
-            $reservation->number_of_nights = $reservation->calculateNights();
+            if (!empty($reservation->check_in_date) && !empty($reservation->check_out_date)) {
+                $reservation->number_of_nights = $reservation->calculateNights();
+            }
             $reservation->total_price = $reservation->calculateTotalPrice();
         });
     }

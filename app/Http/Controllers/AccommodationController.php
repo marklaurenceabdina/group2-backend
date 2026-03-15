@@ -30,13 +30,28 @@ class AccommodationController extends Controller
             $validated = $request->validate([
                 'name' => 'required|string|max:255',
                 'description' => 'nullable|string',
-                'type' => 'required|string|in:standard,deluxe,suite,villa',
+                // allow additional types used in frontend
+                'type' => 'required|string|in:standard,deluxe,suite,villa,room,bungalow',
                 'capacity' => 'required|integer|min:1',
-                'price_per_night' => 'required|numeric|min:0',
+                // frontend sends pricePerNight
+                'price_per_night' => 'sometimes|numeric|min:0',
+                'pricePerNight' => 'sometimes|numeric|min:0',
+                // frontend sends status which maps to available
                 'available' => 'boolean',
+                'status' => 'string|in:available,occupied,maintenance',
                 'image_url' => 'nullable|url',
                 'amenities' => 'nullable|array',
             ]);
+
+            // map frontend keys
+            if (isset($validated['pricePerNight'])) {
+                $validated['price_per_night'] = $validated['pricePerNight'];
+                unset($validated['pricePerNight']);
+            }
+            if (isset($validated['status'])) {
+                $validated['available'] = $validated['status'] === 'available';
+                unset($validated['status']);
+            }
 
             $accommodation = Accommodation::create($validated);
 
@@ -78,10 +93,23 @@ class AccommodationController extends Controller
                 'type' => 'string|in:standard,deluxe,suite,villa',
                 'capacity' => 'integer|min:1',
                 'price_per_night' => 'numeric|min:0',
+                // allow frontend aliases in update as well
+                'pricePerNight' => 'numeric|min:0',
                 'available' => 'boolean',
+                'status' => 'string|in:available,occupied,maintenance',
                 'image_url' => 'nullable|url',
                 'amenities' => 'nullable|array',
             ]);
+
+            // map frontend keys like store
+            if (isset($validated['pricePerNight'])) {
+                $validated['price_per_night'] = $validated['pricePerNight'];
+                unset($validated['pricePerNight']);
+            }
+            if (isset($validated['status'])) {
+                $validated['available'] = $validated['status'] === 'available';
+                unset($validated['status']);
+            }
 
             $accommodation->update($validated);
 

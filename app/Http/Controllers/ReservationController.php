@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Reservation;
 use App\Models\Accommodation;
+use App\Models\Customer;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
@@ -16,16 +17,8 @@ class ReservationController extends Controller
     public function index(Request $request): Response
     {
         try {
-            $user = Auth::user();
-
-            // Check if user is admin/staff (can view all) or customer (can view only theirs)
-            if ($user instanceof \App\Models\User && $user->hasRole('admin')) {
-                $reservations = Reservation::with(['customer', 'accommodation'])->get();
-            } else {
-                $reservations = Reservation::where('customer_id', $user->id)
-                    ->with(['accommodation'])
-                    ->get();
-            }
+            // no auth: return all reservations for demo
+            $reservations = Reservation::with(['customer', 'accommodation'])->get();
 
             return response([
                 'success' => true,
@@ -46,35 +39,54 @@ class ReservationController extends Controller
     public function store(Request $request): Response
     {
         try {
+            // validate front-end fields
             $validated = $request->validate([
-                'customer_id' => 'required|exists:users,id',
-                'accommodation_id' => 'required|exists:accommodations,id',
-                'check_in_date' => 'required|date|after_or_equal:today',
-                'check_out_date' => 'required|date|after:check_in_date',
-                'special_requests' => 'nullable|string',
+                'guestName' => 'required|string',
+                'guestEmail' => 'required|email',
+                'accommodationType' => 'required|string',
+                'roomNumber' => 'required|string',
+                'checkIn' => 'required|date',
+                'checkOut' => 'required|date',
+                'nights' => 'nullable|integer|min:1',
+                'status' => 'nullable|string',
+                'totalAmount' => 'nullable|numeric',
             ]);
 
-            $user = Auth::user();
-            // Verify customer is the authenticated user or admin
-            if ($user instanceof \App\Models\User && !$user->hasRole('admin') && Auth::id() !== $validated['customer_id']) {
-                return response([
-                    'success' => false,
-                    'message' => 'Unauthorized: You can only create reservations for yourself'
-                ], 403);
-            }
+            // find or create related customer and accommodation to avoid foreign key issues
+            $customer = Customer::firstOrCreate(
+                ['email' => $validated['guestEmail']],
+                ['name' => $validated['guestName']]
+            );
 
-            // Check accommodation availability
-            $accommodation = Accommodation::findOrFail($validated['accommodation_id']);
+            $accommodation = Accommodation::firstOrCreate(
+                ['type' => $validated['accommodationType']],
+                [
+                    'name' => $validated['accommodationType'],
+                    'type' => $validated['accommodationType'],
+                    'price_per_night' => $validated['totalAmount'] ? ($validated['totalAmount'] / max(1, ($validated['nights'] ?? 1))) : 0,
+                    'available' => true,
+                    'capacity' => 1,
+                ]
+            );
 
-            if (!$accommodation->isAvailableForDates($validated['check_in_date'], $validated['check_out_date'])) {
-                return response([
-                    'success' => false,
-                    'message' => 'Accommodation is not available for the selected dates'
-                ], 409);
-            }
+            // map to reservation columns; use resolved relational ids
+            $data = [
+                'customer_id' => $customer->id,
+                'accommodation_id' => $accommodation->id,
+                'check_in_date' => $validated['checkIn'],
+                'check_out_date' => $validated['checkOut'],
+                'number_of_nights' => $validated['nights'] ?? 0,
+                'total_price' => $validated['totalAmount'] ?? 0,
+                'status' => $validated['status'] ?? 'pending',
+                'special_requests' => json_encode([
+                    'guestName' => $validated['guestName'],
+                    'guestEmail' => $validated['guestEmail'],
+                    'accommodationType' => $validated['accommodationType'],
+                    'roomNumber' => $validated['roomNumber'],
+                ]),
+            ];
 
-            // Create reservation (numbers will be calculated in model boot)
-            $reservation = Reservation::create($validated);
+            $reservation = Reservation::create($data);
             $reservation->load(['customer', 'accommodation']);
 
             return response([
@@ -101,14 +113,7 @@ class ReservationController extends Controller
      */
     public function show(Reservation $reservation): Response
     {
-        $user = Auth::user();
-        // Verify authorization
-        if ($user instanceof \App\Models\User && !$user->hasRole('admin') && Auth::id() !== $reservation->customer_id) {
-            return response([
-                'success' => false,
-                'message' => 'Unauthorized'
-            ], 403);
-        }
+        // no authorization checks in demo mode
 
         return response([
             'success' => true,
@@ -123,14 +128,7 @@ class ReservationController extends Controller
     public function update(Request $request, Reservation $reservation): Response
     {
         try {
-            $user = Auth::user();
-            // Verify authorization
-            if ($user instanceof \App\Models\User && !$user->hasRole('admin') && Auth::id() !== $reservation->customer_id) {
-                return response([
-                    'success' => false,
-                    'message' => 'Unauthorized'
-                ], 403);
-            }
+            // no authorization checks in demo mode
 
             // Only allow updates if not already completed or cancelled
             if (!in_array($reservation->status, ['pending', 'confirmed'])) {
@@ -141,26 +139,46 @@ class ReservationController extends Controller
             }
 
             $validated = $request->validate([
-                'check_in_date' => 'date|after_or_equal:today',
-                'check_out_date' => 'date',
-                'special_requests' => 'nullable|string',
-                'status' => 'string|in:pending,confirmed,checked_in,completed,cancelled',
+                'guestName' => 'string',
+                'guestEmail' => 'email',
+                'accommodationType' => 'string',
+                'roomNumber' => 'string',
+                'checkIn' => 'date',
+                'checkOut' => 'date',
+                'nights' => 'integer|min:1',
+                'status' => 'string',
+                'totalAmount' => 'numeric',
             ]);
 
-            // If dates are being updated, check availability again
-            if (isset($validated['check_in_date']) || isset($validated['check_out_date'])) {
-                $checkInDate = $validated['check_in_date'] ?? $reservation->check_in_date;
-                $checkOutDate = $validated['check_out_date'] ?? $reservation->check_out_date;
-
-                if (!$reservation->accommodation->isAvailableForDates($checkInDate, $checkOutDate)) {
-                    return response([
-                        'success' => false,
-                        'message' => 'Accommodation is not available for the selected dates'
-                    ], 409);
+            // map fields
+            $data = [];
+            if (isset($validated['checkIn'])) {
+                $data['check_in_date'] = $validated['checkIn'];
+            }
+            if (isset($validated['checkOut'])) {
+                $data['check_out_date'] = $validated['checkOut'];
+            }
+            if (isset($validated['nights'])) {
+                $data['number_of_nights'] = $validated['nights'];
+            }
+            if (isset($validated['totalAmount'])) {
+                $data['total_price'] = $validated['totalAmount'];
+            }
+            if (isset($validated['status'])) {
+                $data['status'] = $validated['status'];
+            }
+            // store original front-end values in special_requests if provided
+            $extras = [];
+            foreach (['guestName', 'guestEmail', 'accommodationType', 'roomNumber'] as $key) {
+                if (isset($validated[$key])) {
+                    $extras[$key] = $validated[$key];
                 }
             }
+            if (!empty($extras)) {
+                $data['special_requests'] = json_encode($extras);
+            }
 
-            $reservation->update($validated);
+            $reservation->update($data);
             $reservation->load(['customer', 'accommodation']);
 
             return response([
@@ -188,14 +206,7 @@ class ReservationController extends Controller
     public function destroy(Reservation $reservation): Response
     {
         try {
-            $user = Auth::user();
-            // Verify authorization
-            if ($user instanceof \App\Models\User && !$user->hasRole('admin') && Auth::id() !== $reservation->customer_id) {
-                return response([
-                    'success' => false,
-                    'message' => 'Unauthorized'
-                ], 403);
-            }
+            // no authorization checks in demo mode
 
             // Only allow deletion if pending or confirmed
             if (!in_array($reservation->status, ['pending', 'confirmed'])) {
