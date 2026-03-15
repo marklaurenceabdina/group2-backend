@@ -14,7 +14,7 @@ cd <YOUR_PROJECT_NAME>
 php artisan key:generate
 
 # Step 4: instead of php artisan serve
-php -S 127.0.0.1:8080 -t public
+php -S 127.0.0.1:9000 -t public
 
 php artisan migrate
 
