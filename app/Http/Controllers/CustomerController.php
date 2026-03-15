@@ -25,6 +25,7 @@ class CustomerController extends Controller
                 'name' => 'required|string|max:255',
                 'email' => 'required|email|unique:customers,email',
                 'phone' => 'nullable|string',
+                'address' => 'nullable|string',
                 'nationality' => 'nullable|string',
                 'totalStays' => 'sometimes|integer|min:0',
                 'totalSpent' => 'sometimes|numeric|min:0',
@@ -35,7 +36,8 @@ class CustomerController extends Controller
                 'name' => $validated['name'],
                 'email' => $validated['email'],
                 'phone' => $validated['phone'] ?? null,
-                'nationality' => $validated['nationality'] ?? null,
+                // Accept `address` from clients but persist to the existing `nationality` column
+                'nationality' => $validated['address'] ?? $validated['nationality'] ?? null,
                 'total_stays' => $validated['totalStays'] ?? 0,
                 'total_spent' => $validated['totalSpent'] ?? 0,
                 'last_visit' => $validated['lastVisit'] ?? null,
@@ -77,6 +79,7 @@ class CustomerController extends Controller
                 'name' => 'string|max:255',
                 'email' => 'email|unique:customers,email,' . $customer->id,
                 'phone' => 'nullable|string',
+                'address' => 'nullable|string',
                 'nationality' => 'nullable|string',
                 'totalStays' => 'integer|min:0',
                 'totalSpent' => 'numeric|min:0',
@@ -93,7 +96,10 @@ class CustomerController extends Controller
             if (isset($validated['phone'])) {
                 $data['phone'] = $validated['phone'];
             }
-            if (isset($validated['nationality'])) {
+            // Accept either address or nationality from clients; store in nationality column
+            if (isset($validated['address'])) {
+                $data['nationality'] = $validated['address'];
+            } elseif (isset($validated['nationality'])) {
                 $data['nationality'] = $validated['nationality'];
             }
             if (isset($validated['totalStays'])) {

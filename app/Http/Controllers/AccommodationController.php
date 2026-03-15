@@ -90,7 +90,7 @@ class AccommodationController extends Controller
             $validated = $request->validate([
                 'name' => 'string|max:255',
                 'description' => 'nullable|string',
-                'type' => 'string|in:standard,deluxe,suite,villa',
+                'type' => 'string|in:standard,deluxe,suite,villa,room,bungalow',
                 'capacity' => 'integer|min:1',
                 'price_per_night' => 'numeric|min:0',
                 // allow frontend aliases in update as well
@@ -100,6 +100,11 @@ class AccommodationController extends Controller
                 'image_url' => 'nullable|url',
                 'amenities' => 'nullable|array',
             ]);
+
+            // map frontend keys like store
+            // capture old values for dynamic recalculation logic
+            $oldPrice = $accommodation->price_per_night;
+            $oldAvailable = $accommodation->available;
 
             // map frontend keys like store
             if (isset($validated['pricePerNight'])) {
@@ -112,6 +117,26 @@ class AccommodationController extends Controller
             }
 
             $accommodation->update($validated);
+
+            // If price changed, recompute total_price for related reservations (pending/confirmed)
+            if (array_key_exists('price_per_night', $validated) && $oldPrice != $accommodation->price_per_night) {
+                $newPpn = $accommodation->price_per_night ?? 0;
+                $affected = $accommodation->reservations()->whereIn('status', ['pending', 'confirmed'])->get();
+                foreach ($affected as $res) {
+                    $n = $res->number_of_nights ?? 1;
+                    $res->update(['total_price' => $n * $newPpn]);
+                }
+            }
+
+            // If availability toggled to false, move future confirmed reservations back to pending
+            if (array_key_exists('available', $validated) && $oldAvailable !== ($validated['available'] ?? $oldAvailable)) {
+                if (($validated['available'] ?? false) === false) {
+                    $accommodation->reservations()
+                        ->where('status', 'confirmed')
+                        ->whereDate('check_in_date', '>=', now()->toDateString())
+                        ->update(['status' => 'pending']);
+                }
+            }
 
             return response([
                 'success' => true,
