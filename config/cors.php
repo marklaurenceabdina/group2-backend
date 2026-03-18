@@ -22,8 +22,11 @@ return [
 
     'allowed_origins' => [
         'http://localhost:5173',  // Vite dev server
+        'http://127.0.0.1:5173',  // Vite dev server (127.0.0.1)
         'http://localhost:3000',  // Alternative React dev port
+        'http://127.0.0.1:3000',  // Alternative dev port (127.0.0.1)
         'http://localhost:8080',  // Alternative dev port
+        'http://127.0.0.1:8080',  // Alternative dev port (127.0.0.1)
         // Add production domains here
         // 'https://yourdomain.com',
     ],
