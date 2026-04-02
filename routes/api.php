@@ -19,6 +19,8 @@ Route::get('/user', function (Request $request) {
 |--------------------------------------------------------------------------
 */
 Route::apiResource('accommodations', AccommodationController::class);
+Route::get('accommodations/history/all', [AccommodationController::class, 'history']);
+Route::get('accommodations/history/search', [AccommodationController::class, 'historySearch']);
 Route::post('accommodations/available', [AccommodationController::class, 'availableForDates']);
 
 /*

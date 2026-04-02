@@ -166,6 +166,71 @@ class AccommodationController extends Controller
     }
 
     /**
+     * Get accommodation history with all reservations and guest details
+     */
+    public function history(): Response
+    {
+        try {
+            $accommodations = Accommodation::withTrashed()->with([
+                'reservations' => function ($query) {
+                    $query->with('customer')->orderBy('check_in_date', 'desc');
+                }
+            ])->get();
+
+            return response([
+                'success' => true,
+                'data' => $accommodations,
+                'message' => 'Accommodation history retrieved successfully'
+            ]);
+        } catch (\Exception $e) {
+            return response([
+                'success' => false,
+                'message' => 'Failed to retrieve accommodation history: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get complete history export with optional search filters
+     */
+    public function historySearch(Request $request): Response
+    {
+        try {
+            $accommodationName = $request->query('accommodation') ?? '';
+            $guestName = $request->query('guest') ?? '';
+
+            $query = Accommodation::withTrashed()->with([
+                'reservations' => function ($query) use ($guestName) {
+                    $query->with('customer');
+                    if ($guestName) {
+                        $query->whereHas('customer', function ($q) use ($guestName) {
+                            $q->where('name', 'like', '%' . $guestName . '%');
+                        });
+                    }
+                    $query->orderBy('check_in_date', 'desc');
+                }
+            ]);
+
+            if ($accommodationName) {
+                $query->where('name', 'like', '%' . $accommodationName . '%');
+            }
+
+            $accommodations = $query->get();
+
+            return response([
+                'success' => true,
+                'data' => $accommodations,
+                'message' => 'History search results'
+            ]);
+        } catch (\Exception $e) {
+            return response([
+                'success' => false,
+                'message' => 'Search failed: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Get available accommodations for given dates
      */
     public function availableForDates(Request $request): Response

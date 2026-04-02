@@ -15,7 +15,7 @@ class CreateInventoryItemsTable extends Migration
             $table->integer('quantity')->default(0);
             $table->integer('min_stock')->default(0);
             $table->string('unit')->nullable();
-            $table->date('last_updated')->nullable();
+            $table->timestamp('last_updated')->nullable();
             $table->timestamps();
         });
     }

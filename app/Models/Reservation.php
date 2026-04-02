@@ -33,7 +33,8 @@ class Reservation extends Model
      */
     public function customer(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'customer_id');
+        // Include soft-deleted customers so reservation history stays intact
+        return $this->belongsTo(Customer::class, 'customer_id')->withTrashed();
     }
 
     /**
@@ -41,7 +42,8 @@ class Reservation extends Model
      */
     public function accommodation(): BelongsTo
     {
-        return $this->belongsTo(Accommodation::class);
+        // Include soft-deleted accommodations to preserve reservation history
+        return $this->belongsTo(Accommodation::class)->withTrashed();
     }
 
     /**

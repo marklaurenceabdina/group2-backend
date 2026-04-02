@@ -21,6 +21,6 @@ class InventoryItem extends Model
     protected $casts = [
         'quantity' => 'integer',
         'min_stock' => 'integer',
-        'last_updated' => 'date',
+        'last_updated' => 'datetime',
     ];
 }

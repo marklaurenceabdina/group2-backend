@@ -44,6 +44,7 @@ class ReservationController extends Controller
             $request->merge([
                 'guestName' => $request->input('guestName') ?? $request->input('guest_name') ?? $request->input('name'),
                 'guestEmail' => $request->input('guestEmail') ?? $request->input('guest_email') ?? $request->input('email'),
+                'guestPhone' => $request->input('guestPhone') ?? $request->input('phone'),
                 'accommodationId' => $request->input('accommodationId') ?? $request->input('accommodation_id'),
                 'accommodationType' => $request->input('accommodationType') ?? $request->input('accommodation_type'),
                 'roomNumber' => $request->input('roomNumber') ?? $request->input('room_number'),
@@ -58,6 +59,7 @@ class ReservationController extends Controller
             $validated = $request->validate([
                 'guestName' => 'required|string',
                 'guestEmail' => 'required|email',
+                'guestPhone' => 'nullable|string',
                 // accept either an accommodation id (preferred) or an accommodationType string
                 'accommodationId' => 'nullable',
                 'accommodationType' => 'nullable|string',
@@ -73,7 +75,7 @@ class ReservationController extends Controller
             // find or create related customer and accommodation to avoid foreign key issues
             $customer = Customer::firstOrCreate(
                 ['email' => $validated['guestEmail']],
-                ['name' => $validated['guestName']]
+                ['name' => $validated['guestName'], 'phone' => $validated['guestPhone']]
             );
 
             // Resolve accommodation: prefer an existing record by id, otherwise try by provided type
@@ -138,6 +140,7 @@ class ReservationController extends Controller
                 'special_requests' => json_encode([
                     'guestName' => $validated['guestName'],
                     'guestEmail' => $validated['guestEmail'],
+                    'guestPhone' => $validated['guestPhone'],
                     'accommodationType' => $validated['accommodationType'] ?? null,
                     'accommodationId' => $accommodation->id,
                     'roomNumber' => $validated['roomNumber'] ?? null,
@@ -200,6 +203,7 @@ class ReservationController extends Controller
             $request->merge([
                 'guestName' => $request->input('guestName') ?? $request->input('guest_name') ?? $request->input('name'),
                 'guestEmail' => $request->input('guestEmail') ?? $request->input('guest_email') ?? $request->input('email'),
+                'guestPhone' => $request->input('guestPhone') ?? $request->input('phone'),
                 'accommodationId' => $request->input('accommodationId') ?? $request->input('accommodation_id'),
                 'accommodationType' => $request->input('accommodationType') ?? $request->input('accommodation_type'),
                 'roomNumber' => $request->input('roomNumber') ?? $request->input('room_number'),
@@ -213,6 +217,7 @@ class ReservationController extends Controller
             $validated = $request->validate([
                 'guestName' => 'string',
                 'guestEmail' => 'email',
+                'guestPhone' => 'nullable|string',
                 'accommodationId' => 'nullable',
                 'accommodationType' => 'string',
                 'roomNumber' => 'string',
@@ -247,7 +252,7 @@ class ReservationController extends Controller
             }
             // store original front-end values in special_requests if provided
             $extras = [];
-            foreach (['guestName', 'guestEmail', 'accommodationType', 'accommodationId', 'roomNumber'] as $key) {
+            foreach (['guestName', 'guestEmail', 'guestPhone', 'accommodationType', 'accommodationId', 'roomNumber'] as $key) {
                 if (isset($validated[$key])) {
                     $extras[$key] = $validated[$key];
                 }

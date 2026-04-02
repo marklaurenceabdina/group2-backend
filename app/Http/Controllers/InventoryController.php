@@ -27,7 +27,6 @@ class InventoryController extends Controller
                 'quantity' => 'required|integer|min:0',
                 'minStock' => 'sometimes|integer|min:0',
                 'unit' => 'nullable|string',
-                'lastUpdated' => 'nullable|date',
             ]);
 
             $data = [
@@ -36,7 +35,7 @@ class InventoryController extends Controller
                 'quantity' => $validated['quantity'],
                 'min_stock' => $validated['minStock'] ?? 0,
                 'unit' => $validated['unit'] ?? null,
-                'last_updated' => $validated['lastUpdated'] ?? null,
+                'last_updated' => now(),
             ];
 
             $item = InventoryItem::create($data);
@@ -68,11 +67,10 @@ class InventoryController extends Controller
         try {
             $validated = $request->validate([
                 'name' => 'string|max:255',
-                'category' => 'string',
+                'category' => 'nullable|string',
                 'quantity' => 'integer|min:0',
                 'minStock' => 'integer|min:0',
-                'unit' => 'string',
-                'lastUpdated' => 'nullable|date',
+                'unit' => 'nullable|string',
             ]);
 
             $data = [];
@@ -91,9 +89,9 @@ class InventoryController extends Controller
             if (isset($validated['unit'])) {
                 $data['unit'] = $validated['unit'];
             }
-            if (isset($validated['lastUpdated'])) {
-                $data['last_updated'] = $validated['lastUpdated'];
-            }
+
+            // Always update the last_updated timestamp
+            $data['last_updated'] = now();
 
             $inventoryItem->update($data);
             return response([
@@ -116,6 +114,6 @@ class InventoryController extends Controller
         return response([
             'success' => true,
             'message' => 'Inventory item deleted successfully'
-        ]);
+        ], 200);
     }
 }
