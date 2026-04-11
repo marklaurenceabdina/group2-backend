@@ -8,6 +8,7 @@ use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\AnalyticsController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -39,3 +40,6 @@ Route::apiResource('customers', CustomerController::class);
 Route::apiResource('services', ServiceController::class);
 Route::apiResource('inventory', InventoryController::class);
 Route::apiResource('payments', PaymentController::class);
+
+// Analytics
+Route::get('analytics/today', [AnalyticsController::class, 'today']);
