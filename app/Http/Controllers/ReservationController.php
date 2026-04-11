@@ -40,114 +40,79 @@ class ReservationController extends Controller
     public function store(Request $request): Response
     {
         try {
-            // normalize input keys to accept both camelCase and snake_case from different frontends
+            // Merge/normalize inputs
             $request->merge([
-                'guestName' => $request->input('guestName') ?? $request->input('guest_name') ?? $request->input('name'),
-                'guestEmail' => $request->input('guestEmail') ?? $request->input('guest_email') ?? $request->input('email'),
+                'guestName' => $request->input('guestName') ?? $request->input('name'),
+                'guestEmail' => $request->input('guestEmail') ?? $request->input('email'),
                 'guestPhone' => $request->input('guestPhone') ?? $request->input('phone'),
                 'accommodationId' => $request->input('accommodationId') ?? $request->input('accommodation_id'),
                 'accommodationType' => $request->input('accommodationType') ?? $request->input('accommodation_type'),
-                'roomNumber' => $request->input('roomNumber') ?? $request->input('room_number'),
-                'checkIn' => $request->input('checkIn') ?? $request->input('check_in') ?? $request->input('check_in_date'),
-                'checkOut' => $request->input('checkOut') ?? $request->input('check_out') ?? $request->input('check_out_date'),
-                'nights' => $request->input('nights') ?? $request->input('number_of_nights'),
-                'status' => $request->input('status') ?? $request->input('reservation_status'),
-                'totalAmount' => $request->input('totalAmount') ?? $request->input('total_price'),
+                'checkIn' => $request->input('checkIn') ?? $request->input('check_in_date'),
+                'checkOut' => $request->input('checkOut') ?? $request->input('check_out_date'),
+                'status' => $request->input('status') ?? 'pending',
             ]);
 
-            // validate front-end fields
+            // Validate required fields
             $validated = $request->validate([
                 'guestName' => 'required|string',
-                'guestEmail' => 'required|email',
+                'guestEmail' => 'nullable|email',
                 'guestPhone' => 'nullable|string',
-                // accept either an accommodation id (preferred) or an accommodationType string
-                'accommodationId' => 'nullable',
-                'accommodationType' => 'nullable|string',
-                // roomNumber is optional in the current UI
-                'roomNumber' => 'nullable|string',
+                'accommodationId' => 'required|exists:accommodations,id',
                 'checkIn' => 'required|date',
-                'checkOut' => 'required|date',
-                'nights' => 'nullable|integer|min:1',
-                'status' => 'nullable|string',
-                'totalAmount' => 'nullable|numeric',
+                'checkOut' => 'required|date|after:checkIn',
+                'status' => 'in:pending,confirmed,checked_in,checked_out,cancelled',
             ]);
 
-            // find or create related customer and accommodation to avoid foreign key issues
+            // Require at least email or phone
+            if (empty($validated['guestEmail']) && empty($validated['guestPhone'])) {
+                return response([
+                    'success' => false,
+                    'errors' => ['contact' => ['Provide at least email or phone']],
+                    'message' => 'Validation failed'
+                ], 422);
+            }
+
+            // Customer creation / retrieval
             $customer = Customer::firstOrCreate(
-                ['email' => $validated['guestEmail']],
-                ['name' => $validated['guestName'], 'phone' => $validated['guestPhone']]
+                ['email' => $validated['guestEmail'] ?? uniqid() . '@temp.com'],
+                [
+                    'name' => $validated['guestName'],
+                    'phone' => $validated['guestPhone'] ?? null
+                ]
             );
 
-            // Resolve accommodation: prefer an existing record by id, otherwise try by provided type
-            $accommodation = null;
-            if (!empty($validated['accommodationId'])) {
-                $accommodation = Accommodation::find($validated['accommodationId']);
-                if (!$accommodation) {
-                    return response([
-                        'success' => false,
-                        'errors' => ['accommodationId' => ['Accommodation not found']],
-                        'message' => 'Validation failed'
-                    ], 422);
-                }
-            }
-            if (!$accommodation && !empty($validated['accommodationType'])) {
-                $accommodation = Accommodation::firstOrCreate(
-                    ['type' => $validated['accommodationType']],
-                    [
-                        'name' => $validated['accommodationType'],
-                        'type' => $validated['accommodationType'],
-                        'price_per_night' => $validated['totalAmount'] ? ($validated['totalAmount'] / max(1, ($validated['nights'] ?? 1))) : 0,
-                        'available' => true,
-                        'capacity' => 1,
-                    ]
-                );
-            }
-            // If still not found, create a placeholder accommodation record
-            if (!$accommodation) {
-                $accommodation = Accommodation::create([
-                    'name' => 'Unspecified',
-                    'type' => 'room',
-                    'price_per_night' => $validated['totalAmount'] ?? 0,
-                    'available' => true,
-                    'capacity' => 1,
-                ]);
-            }
+            // Get accommodation
+            $accommodation = Accommodation::find($validated['accommodationId']);
 
-            // Calculate nights from dates (server authoritative)
+            // Compute number of nights
             $checkIn = Carbon::parse($validated['checkIn']);
             $checkOut = Carbon::parse($validated['checkOut']);
-            // Set check-in time to the current server time (preserve the chosen date, use now's hours/minutes)
-            $now = Carbon::now();
-            $checkIn->setTime($now->hour, $now->minute, $now->second);
-            $nights = $checkIn->diffInDays($checkOut);
-            if ($nights < 1) {
-                $nights = 1;
-            }
+            $nights = max(1, $checkIn->diffInDays($checkOut));
 
-            // Compute total based on accommodation rate when available
-            $pricePerNight = $accommodation->price_per_night ?? ($validated['totalAmount'] ? ($validated['totalAmount'] / max(1, ($validated['nights'] ?? 1))) : 0);
-            $computedTotal = $nights * $pricePerNight;
+            // Compute total price
+            $pricePerNight = $accommodation->price_per_night ?? 0;
+            $total = $nights * $pricePerNight;
 
-            // map to reservation columns; use resolved relational ids
-            $data = [
+            // Save reservation
+            $reservation = Reservation::create([
                 'customer_id' => $customer->id,
                 'accommodation_id' => $accommodation->id,
-                'check_in_date' => $checkIn->toDateTimeString(),
-                'check_out_date' => $validated['checkOut'],
+                'check_in_date' => $checkIn,
+                'check_out_date' => $checkOut,
                 'number_of_nights' => $nights,
-                'total_price' => $computedTotal,
-                'status' => $validated['status'] ?? 'pending',
+                'total_price' => $total,
+                'status' => $validated['status'],
                 'special_requests' => json_encode([
                     'guestName' => $validated['guestName'],
                     'guestEmail' => $validated['guestEmail'],
                     'guestPhone' => $validated['guestPhone'],
-                    'accommodationType' => $validated['accommodationType'] ?? null,
+                    'accommodationType' => $validated['accommodationType'] ?? $accommodation->type,
                     'accommodationId' => $accommodation->id,
-                    'roomNumber' => $validated['roomNumber'] ?? null,
+                    'roomNumber' => $request->input('roomNumber') ?? null,
                 ]),
-            ];
+            ]);
 
-            $reservation = Reservation::create($data);
+            // Load relations
             $reservation->load(['customer', 'accommodation']);
 
             return response([
@@ -222,7 +187,7 @@ class ReservationController extends Controller
                 'accommodationType' => 'string',
                 'roomNumber' => 'string',
                 'checkIn' => 'date',
-                'checkOut' => 'date',
+                'checkOut' => 'date|after:checkIn',
                 'nights' => 'integer|min:1',
                 'status' => 'string',
                 'totalAmount' => 'numeric',
