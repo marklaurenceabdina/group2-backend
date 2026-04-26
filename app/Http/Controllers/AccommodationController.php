@@ -8,12 +8,10 @@ use Illuminate\Http\Response;
 
 class AccommodationController extends Controller
 {
-    /**
-     * Display a listing of accommodations
-     */
     public function index(): Response
     {
         $accommodations = Accommodation::all();
+
         return response([
             'success' => true,
             'data' => $accommodations,
@@ -21,37 +19,29 @@ class AccommodationController extends Controller
         ]);
     }
 
-    /**
-     * Store a newly created accommodation
-     */
     public function store(Request $request): Response
     {
         try {
             $validated = $request->validate([
                 'name' => 'required|string|max:255',
                 'description' => 'nullable|string',
-                // allow additional types used in frontend
-                'type' => 'required|string|in:standard,deluxe,suite,villa,room,bungalow',
-                'capacity' => 'required|integer|min:1',
-                // frontend sends pricePerNight
-                'price_per_night' => 'sometimes|numeric|min:0',
-                'pricePerNight' => 'sometimes|numeric|min:0',
-                // frontend sends status which maps to available
-                'available' => 'boolean',
-                'status' => 'string|in:available,occupied,maintenance',
+
+                // ✅ made optional to avoid frontend errors
+                'type' => 'nullable|string|in:standard,deluxe,suite,villa',
+                'capacity' => 'nullable|integer|min:1',
+
+                // ✅ still required
+                'price_per_night' => 'required|numeric|min:0',
+
+                'available' => 'nullable|boolean',
                 'image_url' => 'nullable|url',
                 'amenities' => 'nullable|array',
             ]);
 
-            // map frontend keys
-            if (isset($validated['pricePerNight'])) {
-                $validated['price_per_night'] = $validated['pricePerNight'];
-                unset($validated['pricePerNight']);
-            }
-            if (isset($validated['status'])) {
-                $validated['available'] = $validated['status'] === 'available';
-                unset($validated['status']);
-            }
+            // ✅ default values (important)
+            $validated['type'] = $validated['type'] ?? 'standard';
+            $validated['capacity'] = $validated['capacity'] ?? 1;
+            $validated['available'] = $validated['available'] ?? true;
 
             $accommodation = Accommodation::create($validated);
 
@@ -60,6 +50,7 @@ class AccommodationController extends Controller
                 'data' => $accommodation,
                 'message' => 'Accommodation created successfully'
             ], 201);
+
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response([
                 'success' => false,
@@ -69,9 +60,6 @@ class AccommodationController extends Controller
         }
     }
 
-    /**
-     * Display the specified accommodation
-     */
     public function show(Accommodation $accommodation): Response
     {
         return response([
@@ -81,68 +69,28 @@ class AccommodationController extends Controller
         ]);
     }
 
-    /**
-     * Update the specified accommodation
-     */
     public function update(Request $request, Accommodation $accommodation): Response
     {
         try {
             $validated = $request->validate([
                 'name' => 'string|max:255',
                 'description' => 'nullable|string',
-                'type' => 'string|in:standard,deluxe,suite,villa,room,bungalow',
-                'capacity' => 'integer|min:1',
+                'type' => 'nullable|string|in:standard,deluxe,suite,villa',
+                'capacity' => 'nullable|integer|min:1',
                 'price_per_night' => 'numeric|min:0',
-                // allow frontend aliases in update as well
-                'pricePerNight' => 'numeric|min:0',
-                'available' => 'boolean',
-                'status' => 'string|in:available,occupied,maintenance',
+                'available' => 'nullable|boolean',
                 'image_url' => 'nullable|url',
                 'amenities' => 'nullable|array',
             ]);
 
-            // map frontend keys like store
-            // capture old values for dynamic recalculation logic
-            $oldPrice = $accommodation->price_per_night;
-            $oldAvailable = $accommodation->available;
-
-            // map frontend keys like store
-            if (isset($validated['pricePerNight'])) {
-                $validated['price_per_night'] = $validated['pricePerNight'];
-                unset($validated['pricePerNight']);
-            }
-            if (isset($validated['status'])) {
-                $validated['available'] = $validated['status'] === 'available';
-                unset($validated['status']);
-            }
-
             $accommodation->update($validated);
-
-            // If price changed, recompute total_price for related reservations (pending/confirmed)
-            if (array_key_exists('price_per_night', $validated) && $oldPrice != $accommodation->price_per_night) {
-                $newPpn = $accommodation->price_per_night ?? 0;
-                $affected = $accommodation->reservations()->whereIn('status', ['pending', 'confirmed'])->get();
-                foreach ($affected as $res) {
-                    $n = $res->number_of_nights ?? 1;
-                    $res->update(['total_price' => $n * $newPpn]);
-                }
-            }
-
-            // If availability toggled to false, move future confirmed reservations back to pending
-            if (array_key_exists('available', $validated) && $oldAvailable !== ($validated['available'] ?? $oldAvailable)) {
-                if (($validated['available'] ?? false) === false) {
-                    $accommodation->reservations()
-                        ->where('status', 'confirmed')
-                        ->whereDate('check_in_date', '>=', now()->toDateString())
-                        ->update(['status' => 'pending']);
-                }
-            }
 
             return response([
                 'success' => true,
                 'data' => $accommodation,
                 'message' => 'Accommodation updated successfully'
             ]);
+
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response([
                 'success' => false,
@@ -152,9 +100,6 @@ class AccommodationController extends Controller
         }
     }
 
-    /**
-     * Remove the specified accommodation
-     */
     public function destroy(Accommodation $accommodation): Response
     {
         $accommodation->delete();
@@ -165,74 +110,6 @@ class AccommodationController extends Controller
         ]);
     }
 
-    /**
-     * Get accommodation history with all reservations and guest details
-     */
-    public function history(): Response
-    {
-        try {
-            $accommodations = Accommodation::withTrashed()->with([
-                'reservations' => function ($query) {
-                    $query->with('customer')->orderBy('check_in_date', 'desc');
-                }
-            ])->get();
-
-            return response([
-                'success' => true,
-                'data' => $accommodations,
-                'message' => 'Accommodation history retrieved successfully'
-            ]);
-        } catch (\Exception $e) {
-            return response([
-                'success' => false,
-                'message' => 'Failed to retrieve accommodation history: ' . $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
-     * Get complete history export with optional search filters
-     */
-    public function historySearch(Request $request): Response
-    {
-        try {
-            $accommodationName = $request->query('accommodation') ?? '';
-            $guestName = $request->query('guest') ?? '';
-
-            $query = Accommodation::withTrashed()->with([
-                'reservations' => function ($query) use ($guestName) {
-                    $query->with('customer');
-                    if ($guestName) {
-                        $query->whereHas('customer', function ($q) use ($guestName) {
-                            $q->where('name', 'like', '%' . $guestName . '%');
-                        });
-                    }
-                    $query->orderBy('check_in_date', 'desc');
-                }
-            ]);
-
-            if ($accommodationName) {
-                $query->where('name', 'like', '%' . $accommodationName . '%');
-            }
-
-            $accommodations = $query->get();
-
-            return response([
-                'success' => true,
-                'data' => $accommodations,
-                'message' => 'History search results'
-            ]);
-        } catch (\Exception $e) {
-            return response([
-                'success' => false,
-                'message' => 'Search failed: ' . $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
-     * Get available accommodations for given dates
-     */
     public function availableForDates(Request $request): Response
     {
         try {
@@ -251,6 +128,7 @@ class AccommodationController extends Controller
                 'data' => $available,
                 'message' => 'Available accommodations retrieved successfully'
             ]);
+
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response([
                 'success' => false,
